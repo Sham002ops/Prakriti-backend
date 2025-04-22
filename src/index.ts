@@ -139,9 +139,6 @@ app.use('/api', searchRoutes); // Now available at /api/search and /api/semantic
 // });
 
 app.listen(port, async () => {
-  await createChunkSchema(); 
-  // console.log("OPENAI_API_KEY:",process.env.OPENAI_API_KEY);
-  // console.log("WEAVIATE_API_KEY:", process.env.WEAVIATE_API_KEY);
-  
+  await createChunkSchema();   
   console.log(`Server running on http://localhost:${port}`);
 });
