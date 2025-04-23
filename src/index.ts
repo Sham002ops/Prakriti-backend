@@ -67,7 +67,10 @@ const upload = multer({ dest: 'uploads/' }); // will store PDF in /uploads
 
 app.post('/upload-pdf', upload.single('file'), async (req, res) => {
   try {
-    if (!req.file) {
+    const subject = req.query.subject;
+  
+
+    if (!req.file || !subject) {
       res.status(400).json({ error: 'No file uploaded' });
       return;
     }
@@ -87,8 +90,10 @@ app.post('/upload-pdf', upload.single('file'), async (req, res) => {
         });
 
         const topic = topicResponse.choices[0].message?.content?.trim() || 'Unknown';
+        console.log( "chunk : ",chunk, "topic: ", topic,  "subject: ", subject);
+        
 
-        return { text: chunk, topic };
+        return { text: chunk, topic , subject};
       })
     );
 
@@ -101,6 +106,7 @@ app.post('/upload-pdf', upload.single('file'), async (req, res) => {
           .withProperties({
             content: text,
             topic: topic,
+            subject: subject,
           })
           .do();
         

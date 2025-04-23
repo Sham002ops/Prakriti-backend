@@ -8,21 +8,25 @@ export const createChunkSchema = async () => {
     if (!hasChunkClass) {
       await weaviateClient.schema.classCreator().withClass({
         class: 'Chunk',
-        description: 'A chunk of text extracted from a PDF with topic label',
+        description: 'A chunk of text extracted from a PDF with topic and subject labels',
         vectorizer: 'text2vec-openai',
         properties: [
           {
-            name: 'content', // Match what you're storing
+            name: 'content', 
             dataType: ['text'],
           },
           {
-            name: 'topic',
+            name: 'topic', 
+            dataType: ['text'],
+          },
+          {
+            name: 'subject', 
             dataType: ['text'],
           },
         ],
       }).do();
 
-      console.log('✅ Chunk schema created in Weaviate.');
+      console.log('✅ Chunk schema with subject property created in Weaviate.');
     } else {
       console.log('ℹ️ Chunk class already exists.');
     }
