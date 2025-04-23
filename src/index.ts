@@ -24,42 +24,6 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-app.post('/generate-mcq', async (req: Request, res: Response) => {
-  const { topic } = req.body;
-
-  if (!topic) 
-     
-  res.status(400).json({ error: "Topic is required" });
-
-  try {
-        const prompt = `
-            Generate 5 multiple-choice questions with 4 options each on the topic "${topic}".
-            Indicate the correct option like this:
-
-            Q1. Question text here
-            A. Option A
-            B. Option B
-            C. Option C
-            D. Option D
-            Answer: B
-
-            Only return questions in the above format.
-            `;
-
-    const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-    });
-
-    const result = response.choices[0].message?.content;
-    res.json({ questions: result });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to generate questions' });
-  }
-});
-
 
 const upload = multer({ dest: 'uploads/' }); // will store PDF in /uploads
 
@@ -124,25 +88,6 @@ app.post('/upload-pdf', upload.single('file'), async (req, res) => {
 
 app.use('/api', searchRoutes); // Now available at /api/search and /api/semantic-search
 
-
-// app.post('/upload-pdf', upload.single('file'), async (req, res) => {
-//   try {
-//     if (!req.file) {
-//       res.status(400).json({ error: 'No file uploaded' });
-//       return 
-//     }
-//     const filePath = req.file.path; // local path to uploaded file
-//     const text = await extractTextFromPDF(filePath);
-//     const chunks = chunkText(text, 400);
-    
-//     res.json({ chunks }); // you can store this in DB instead
-//     console.log("chunks", chunks);
-    
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: 'Failed to process PDF' });
-//   }
-// });
 
 app.listen(port, async () => {
   await createChunkSchema();   
