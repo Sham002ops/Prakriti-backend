@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
-import weaviateClient from '../lib/weaviateClient';
-import {  AnswerDoubt, findTopicChunks,getAnswerFromAPI,getQuestionsFromAPI,QuestionPrompt } from '../components/getQuestions';
+import weaviateClient from '../../lib/weaviateClient';
+import {  AnswerDoubt, findTopicChunks,getAnswerFromAPI,getQuestionsFromAPI,QuestionPrompt } from '../../components/getQuestions';
 
 const router = express.Router();
 
@@ -29,6 +29,10 @@ router.get('/semantic-search', async (req: Request, res: Response) => {
         res.status(400).json({ error: 'Query is required' });
       return 
     }
+
+     console.log("query:", query);
+  
+
   
     try {
       const result = await weaviateClient.graphql
@@ -54,6 +58,10 @@ router.get('/semantic-search', async (req: Request, res: Response) => {
 
   router.get('/ask-doubt', async (req: Request, res: Response) => {
     const { query } = req.query;
+    
+    console.log("question: ",query);
+    
+
   
     if (!query || typeof query !== 'string') {
        res.status(400).json({ error: 'Query is required' });

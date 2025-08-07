@@ -1,6 +1,5 @@
 import OpenAI from "openai";
 import weaviateClient from "../lib/weaviateClient";
-import { prismaClient } from "../db/db";
 
 type MCQ = {
   number: number;
@@ -77,7 +76,7 @@ export function QuestionPrompt(chunks: { content: string; topic: string }[]): st
 export function AnswerDoubt(chunks: { content: string; topic: string }[], query: string ): string {
   const contentText = chunks.map(chunk => chunk.content).join('\n\n');
   
-  return `You are a professor at a B Pharmacy college. Based on the content below, answer the question: "${query}". If unrelated, respond with "I cannot answer this question."
+  return `You are a docter at a BAMS ayurvadic hospital. Based on the content below, answer the question: "${query}" in short. If unrelated, respond with "I cannot answer this question."
 
           CONTENT:
           """
@@ -112,7 +111,7 @@ export async function getAnswerFromAPI(prompt: string):  Promise<string> {
   
   const completion = await openai.chat.completions.create({
     messages: [
-      { role: 'system', content: 'Act as professor at B pharmacy college' },
+      { role: 'system', content: 'Act as Docter at Ayurvadic College' },
       { role: 'user', content: prompt }
     ],
     model: 'gpt-3.5-turbo',
@@ -160,6 +159,23 @@ export function extractMCQs(response: string): MCQ[] {
 
   return mcqs;
 }
+
+// Somewhere in a shared module (e.g. ./components/getQuestions.ts)
+export async function searchChunksBySemantic(query: string) {
+  const result = await weaviateClient.graphql
+    .get()
+    .withClassName('Chunk')
+    .withFields('content topic')
+    .withNearText({
+      concepts: [query],
+      certainty: 0.7,
+    })
+    .withLimit(6)
+    .do();
+
+  return result?.data?.Get?.Chunk || [];
+}
+
 
 //  export async function storeQuestionsToDB(topic: string, questions: string[]) {
 //   prismaClient.question.create({})

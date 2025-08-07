@@ -1,0 +1,1 @@
+{"root":["./src/app.ts","./src/http/chunktext.ts","./src/http/index.ts","./src/http/textfrompdf.ts","./src/http/routes/searchroutes.ts","./src/components/authmiddleware.ts","./src/components/getquestions.ts","./src/db/createschema.ts","./src/db/db.ts","./src/lib/weaviateclient.ts","./src/ws/wsserver.ts"],"version":"5.8.3"}
