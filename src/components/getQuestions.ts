@@ -73,6 +73,40 @@ export function QuestionPrompt(chunks: { content: string; topic: string }[]): st
 
   return prompt;
 }
+export function AnswerDoubt1(query: string): string {
+  return `
+Role:
+- Act as an Ayurvedic clinician (BAMS) providing brief, educational guidance.
+- Do not give diagnoses, prescriptions, or treatment plans.
+
+Task:
+- Answer the user’s question clearly and concisely in 3–5 sentences.
+- If the question is unrelated to Ayurveda, Prakriti, Tridosha, or general health education, reply exactly: "I cannot answer this question."
+- If the question requires clinical judgment, personal data, or emergency advice, reply with a safety note instead of instructions.
+
+Context constraints:
+- No external sources or prior context are available.
+- Avoid speculation and do not fabricate facts.
+
+Style:
+- Plain language, neutral and respectful tone.
+- Use correct Ayurveda terminology (e.g., Prakriti, Vata-Pitta-Kapha) with one-line explanations if needed.
+- Prefer general educational information, not personalized guidance.
+
+Safety and scope:
+- Do not provide medical advice, dosing, or treatment recommendations.
+- Include a brief safety disclaimer if the user asks for diagnosis or treatment.
+- If unsure, say you’re unsure rather than guessing.
+
+Output format:
+- If answerable: a short paragraph (3–5 sentences).
+- If not appropriate: return exactly "I cannot answer this question."
+
+User question:
+"${query}"
+`.trim();
+}
+
 export function AnswerDoubt(chunks: { content: string; topic: string }[], query: string ): string {
   const contentText = chunks.map(chunk => chunk.content).join('\n\n');
   
@@ -121,6 +155,26 @@ export async function getAnswerFromAPI(prompt: string):  Promise<string> {
   return completion.choices[0].message.content || 'No answer available';
 }
 
+// components/getQuestions.ts
+
+export async function* getAnswerFromAPIStream(prompt: string): AsyncGenerator<string> {
+  const completion = await openai.chat.completions.create({
+    messages: [
+      { role: 'system', content: 'Act as a Doctor at Ayurvedic College' },
+      { role: 'user', content: prompt }
+    ],
+    model: 'gpt-3.5-turbo',
+    temperature: 0.7,
+    stream: true // enable streaming
+  });
+
+  for await (const chunk of completion) {
+    const message = chunk.choices[0]?.delta?.content;
+    if (message) {
+      yield message;
+    }
+  }
+}
 
 
 export function extractMCQs(response: string): MCQ[] {
@@ -162,7 +216,8 @@ export function extractMCQs(response: string): MCQ[] {
 
 // Somewhere in a shared module (e.g. ./components/getQuestions.ts)
 export async function searchChunksBySemantic(query: string) {
-  const result = await weaviateClient.graphql
+  try {
+    const result = await weaviateClient.graphql
     .get()
     .withClassName('Chunk')
     .withFields('content topic')
@@ -174,6 +229,9 @@ export async function searchChunksBySemantic(query: string) {
     .do();
 
   return result?.data?.Get?.Chunk || [];
+  }catch (err){
+    console.error('❌ Semantic search failed:', err);
+  }
 }
 
 

@@ -9,7 +9,7 @@ import { createChunkSchema } from '../db/createSchema';
 import weaviateClient  from '../lib/weaviateClient';
 import searchRoutes from './routes/searchRoutes';
 import 'dotenv/config';
-const JWT_PASSWORD = process.env.JWT_USER_PASSWORD || "defaultPassword";
+const JWT_PASSWORD = process.env.JWT_PASSWORD || "defaultPassword";
 import z from 'zod'
 import { UserModel } from '../db/db';
 import bcrypt from 'bcrypt';
@@ -105,7 +105,8 @@ router.post("/signin", async ( req: Request, res: Response) => {
       res.status(400).json({
           message: "incorect format",
           error: validationResult.error
-      })
+      });
+      return;
   }
 
   const userExists = await UserModel.findOne({ username: username }).select('password');
@@ -122,7 +123,9 @@ router.post("/signin", async ( req: Request, res: Response) => {
 
   const token = jwt.sign({
       id: userExists?._id
-  }, JWT_PASSWORD as string);
+      }, JWT_PASSWORD as string,
+      { expiresIn: "7d" }
+    );
 
   res.json({
       token
