@@ -15,132 +15,136 @@ import { UserModel } from '../db/db';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
-
-
 dotenv.config();
 
-// const app = express();
-const port = process.env.PORT || 5000;
-
-// app.use(cors());
-// app.use(express.json());
-
 const router = express.Router();
-
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+const upload = multer({ dest: 'uploads/' });
 
-const upload = multer({ dest: 'uploads/' }); // will store PDF in /uploads
+// Health check endpoint
+router.get("/health", (req: Request, res: Response) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
 
-router.post("/signup", async ( req: Request, res: Response) => {
-  // zod validation
+// SIGNUP ROUTE - FIXED
+router.post("/signup", async (req: Request, res: Response) => {
   try {
-  const requiredBody = z.object({
+    // Fixed: Added username to validation schema
+    const requiredBody = z.object({
+      username: z.string()
+        .min(3, { message: "Username must be at least 3 characters" })
+        .max(30, { message: "Username should not contain more than 30 characters" }),
       email: z.string()
-          .min(3)
-          .max(30, { message: "Email should not contain more then 30 letter" }),
+        .email({ message: "Invalid email format" })
+        .min(3)
+        .max(50, { message: "Email should not contain more than 50 characters" }),
       password: z.string()
-          .regex(/[A-Z]/, { message: "Password must be contain at least one Capital letter" })
-          .regex(/[a-z]/, { message: "Password must be contain at least one small letter" })
-          .regex(/[0-9]/, { message: "Password must be contain at least one number" })
-          .regex(/[@#$%^&*(){}<>?:"]/, { message: "Password must be contain at least one special character" })
-  })
+        .min(8, { message: "Password must be at least 8 characters" })
+        .regex(/[A-Z]/, { message: "Password must contain at least one capital letter" })
+        .regex(/[a-z]/, { message: "Password must contain at least one lowercase letter" })
+        .regex(/[0-9]/, { message: "Password must contain at least one number" })
+        .regex(/[@#$%^&*(){}<>?:"]/, { message: "Password must contain at least one special character" })
+    });
 
-  const passDataWithSuccess = requiredBody.safeParse(req.body);
+    const passDataWithSuccess = requiredBody.safeParse(req.body);
 
-  if(!passDataWithSuccess.success){
-      
-      res.json({
-          message: "incorect format",
-          error: passDataWithSuccess.error
-      })
-      return
-  }
-
-  const { email, password, username} = req.body;
-  const hashedPassword = await bcrypt.hash(password, 5);
-
-  try {
-      await UserModel.create({
-          username: username,
-          password: hashedPassword,
-          email: email
-      })
-
-      res.json({
-          message: "User signed up"
-      })
-  } catch (e) {
-      res.status(411).json({
-          message: "user allready exists"
-      })
-  }}
-  catch (error) {
-      console.error("Signup error:", error);
-      res.status(500).json({ message: "Internal server error" });
-  }
-
-})
-
-
-router.post("/signin", async ( req: Request, res: Response) => {
-  
-  try{
-      const { username, password} = req.body;
-  const validationResult = z.object({
-      username: z.string().min(3).max(30),
-      password: z.string()
-          .regex(/[A-Z]/)
-          .regex(/[a-z]/)
-          .regex(/[0-9]/)
-          .regex(/[@#$%^&*(){}<>?:"]/),
-  })
-
-  .safeParse(req.body);
-
-  if (!validationResult.success) {
+    if (!passDataWithSuccess.success) {
       res.status(400).json({
-          message: "incorect format",
-          error: validationResult.error
+        message: "Incorrect format",
+        error: passDataWithSuccess.error.errors
       });
       return;
-  }
+    }
 
-  const userExists = await UserModel.findOne({ username: username }).select('password');
-  if (!userExists) {
+    const { email, password, username } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 5);
+
+    try {
+      await UserModel.create({
+        username: username,
+        password: hashedPassword,
+        email: email
+      });
+
+      res.json({
+        message: "User signed up"
+      });
+      return;
+    } catch (e: any) {
+      console.error("Database error:", e);
+      res.status(411).json({
+        message: "User already exists"
+      });
+      return;
+    }
+  } catch (error) {
+    console.error("Signup error:", error);
+    res.status(500).json({ message: "Internal server error" });
+    return;
+  }
+});
+
+// SIGNIN ROUTE - FIXED
+router.post("/signin", async (req: Request, res: Response) => {
+  try {
+    const { username, password } = req.body;
+    
+    const validationResult = z.object({
+      username: z.string().min(3).max(30),
+      password: z.string()
+        .min(8)
+        .regex(/[A-Z]/)
+        .regex(/[a-z]/)
+        .regex(/[0-9]/)
+        .regex(/[@#$%^&*(){}<>?:"]/),
+    }).safeParse(req.body);
+
+    if (!validationResult.success) {
+      res.status(400).json({
+        message: "Incorrect format",
+        error: validationResult.error.errors
+      });
+      return;
+    }
+
+    const userExists = await UserModel.findOne({ username: username }).select('password');
+    
+    if (!userExists) {
       res.status(403).json({ message: "Incorrect credentials" });
       return;
-  }
-  const passwordMatch = await bcrypt.compare(password, userExists?.password as string)
-  if (!passwordMatch){
-      res.status(403).json({
-          message: "Incorrect Credentials"
-      })
-  }
+    }
 
-  const token = jwt.sign({
-      id: userExists?._id
-      }, JWT_PASSWORD as string,
+    const passwordMatch = await bcrypt.compare(password, userExists.password as string);
+    
+    if (!passwordMatch) {
+      res.status(403).json({
+        message: "Incorrect credentials"
+      });
+      return;
+    }
+
+    const token = jwt.sign(
+      { id: userExists._id },
+      JWT_PASSWORD as string,
       { expiresIn: "7d" }
     );
 
-  res.json({
-      token
-  })
-  
-} catch (error) {
-  console.error("Signin error:", error);
-  res.status(500).json({ message: "Internal server error" });
-}
-})
+    res.json({ token });
+    return;
+  } catch (error) {
+    console.error("Signin error:", error);
+    res.status(500).json({ message: "Internal server error" });
+    return;
+  }
+});
 
 router.post('/upload-pdf', upload.single('file'), async (req, res) => {
   try {
     const subject = req.query.subject;
-  
 
     if (!req.file || !subject) {
       res.status(400).json({ error: 'No file uploaded' });
@@ -162,14 +166,12 @@ router.post('/upload-pdf', upload.single('file'), async (req, res) => {
         });
 
         const topic = topicResponse.choices[0].message?.content?.trim() || 'Unknown';
-        console.log( "chunk : ",chunk, "topic: ", topic,  "subject: ", subject);
-        
+        console.log("chunk : ", chunk, "topic: ", topic, "subject: ", subject);
 
-        return { text: chunk, topic , subject};
+        return { text: chunk, topic, subject };
       })
     );
 
-    // Store in Weaviate
     await Promise.all(
       enrichedChunks.map(async ({ text, topic }) => {
         await weaviateClient.data
@@ -181,11 +183,9 @@ router.post('/upload-pdf', upload.single('file'), async (req, res) => {
             subject: subject,
           })
           .do();
-        
       })
     );
 
-    
     res.json({ success: true, chunksStored: enrichedChunks.length });
   } catch (err) {
     console.error(err);
@@ -193,12 +193,6 @@ router.post('/upload-pdf', upload.single('file'), async (req, res) => {
   }
 });
 
+router.use('/fun', searchRoutes);
 
-router.use('/fun', searchRoutes); // Now available at /api/search and /api/semantic-search
-
-
-// app.listen(port, async () => {
-//   await createChunkSchema();   
-//   console.log(`Server running on http://localhost:${port}`);
-// });
 export default router;
