@@ -193,6 +193,6 @@ router.post('/upload-pdf', upload.single('file'), async (req, res) => {
   }
 });
 
-router.use('/fun', searchRoutes);
+// router.use('/fun', searchRoutes);
 
 export default router;
