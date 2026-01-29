@@ -26,4 +26,3 @@ export const ChatModel = model('Chat', ChatSchema);
 
 export const UserModel = model("User", UserSchema );
 
-
