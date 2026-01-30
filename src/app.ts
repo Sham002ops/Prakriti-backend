@@ -8,7 +8,7 @@ const app = express();
 
 const corsOptions = {
   origin: [
-    'https://prakriti-prikshan-client.vercel.app',
+    'https://prakriti-prikshan-client.vercel.app',  // Replace with your Vercel URL
     'https://shamband.work',
     'https://www.shamband.work',
     'http://localhost:5173',
@@ -16,14 +16,12 @@ const corsOptions = {
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 200
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 
-// Apply CORS FIRST
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 
+// Usual Express middleware & route setup
 app.use(express.json());
 
 

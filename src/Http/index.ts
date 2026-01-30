@@ -7,7 +7,6 @@ import { extractTextFromPDF } from './textFromPdf';
 import { chunkText } from './ChunkText';
 import { createChunkSchema } from '../db/createSchema';
 import weaviateClient  from '../lib/weaviateClient';
-import searchRoutes from './routes/searchRoutes';
 import 'dotenv/config';
 const JWT_PASSWORD = process.env.JWT_PASSWORD || "defaultPassword";
 import z from 'zod'
@@ -24,11 +23,6 @@ const openai = new OpenAI({
 });
 
 const upload = multer({ dest: 'uploads/' });
-
-// Health check endpoint
-router.get("/health", (req: Request, res: Response) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
 
 // SIGNUP ROUTE - FIXED
 router.post("/signup", async (req: Request, res: Response) => {
@@ -193,6 +187,5 @@ router.post('/upload-pdf', upload.single('file'), async (req, res) => {
   }
 });
 
-// router.use('/fun', searchRoutes);
 
 export default router;
