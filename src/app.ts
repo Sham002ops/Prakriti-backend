@@ -1,14 +1,14 @@
 import express from "express";
 import { createServer } from "http";
-import { setupWebSocket } from "./ws/wsServer"; // Your WS setup function
-import routes from "./Http/index";                      // Your HTTP routes
-import cors from 'cors'
+import { setupWebSocket } from "./ws/wsServer";
+import routes from "./Http/index";
+import cors from 'cors';
 
 const app = express();
 
 const corsOptions = {
   origin: [
-    'https://prakriti-prikshan-client.vercel.app',  // Replace with your Vercel URL
+    'https://prakriti-prikshan-client.vercel.app',
     'https://shamband.work',
     'https://www.shamband.work',
     'http://localhost:5173',
@@ -16,17 +16,25 @@ const corsOptions = {
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200
 };
 
+// Apply CORS FIRST
 app.use(cors(corsOptions));
 
-// Usual Express middleware & route setup
 app.use(express.json());
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({ 
+    message: "Prakriti Backend API", 
+    status: "running",
+    timestamp: new Date().toISOString()
+  });
+});
 
-app.use('/api', routes);
-// Root health check
+// Health check
 app.get('/health', (req, res) => {
   res.json({ 
     message: "Prakriti Backend API", 
@@ -34,6 +42,11 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+// API routes
+app.use('/api', routes);
+
+
 
 const server = createServer(app);
 setupWebSocket(server);
