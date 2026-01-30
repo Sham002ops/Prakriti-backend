@@ -6,7 +6,7 @@ import cors from 'cors';
 
 const app = express();
 
-const corsOptions = {
+app.use(cors({
   origin: [
     'https://prakriti-prikshan-client.vercel.app',
     'https://shamband.work',
@@ -14,14 +14,9 @@ const corsOptions = {
     'http://localhost:5173',
     'http://localhost:3000'
   ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 200
-};
+  credentials: true
+}));
 
-// Apply CORS FIRST
-app.use(cors(corsOptions));
 
 app.use(express.json());
 
